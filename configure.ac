@@ -81,7 +81,7 @@ else
   # Add a trailing slash if we don't have one
   case "$ICU_CONFIG" in
   */) ;;
-  *) ICU_CONFIG+='/' ;;
+  *) ICU_CONFIG="${ICU_CONFIG}/" ;;
   esac
 
   # Check that icu-config exists
@@ -93,7 +93,7 @@ fi
 # FIXME: icu-config from ICU cross-compiled with mingw wants libicuuc.dll,
 # which won't exist if ICU was compiled static only, so we temporarily add
 # --noverify until we figure out what to do about this.
-ICU_CONFIG+='icu-config --noverify'
+ICU_CONFIG="${ICU_CONFIG}icu-config --noverify"
 
 AC_MSG_WARN([Disregard the next few lines where ICU_* are printed.])
 AC_MSG_WARN([They're all wrong but we fix them up before using them.])
@@ -131,7 +131,7 @@ esac
 duff_icu_compile_flags='-ansi -g -O2 -O3 -std=c99 -pthread -mthreads'
 if test x"$CXX" = "xclang++" ; then
   # These cause clang to freak out on Fedora 18
-  duff_icu_compile_flags+=' -Wp,-D_FORTIFY_SOURCE=2'
+  duff_icu_compile_flags="$duff_icu_compile_flags -Wp,-D_FORTIFY_SOURCE=2"
 fi
 
 LG_REMOVE_FLAGS([ICU_CFLAGS],   [$duff_icu_compile_flags])
@@ -163,10 +163,8 @@ fi
 #
 
 # Boost libs used by tests
-AX_BOOST_CHRONO
 AX_BOOST_PROGRAM_OPTIONS
 AX_BOOST_SYSTEM
-AX_BOOST_THREAD
 
 # Scope test framework
 AC_ARG_WITH([scope],
@@ -192,25 +190,17 @@ if test "x$with_scope" != "xno"; then
 fi
 
 # Tell the user why not if he won't be able to compile the tests
-if test "x$ax_cv_boost_chrono" != "xyes" || \
-   test "x$ax_cv_boost_program_options" != "xyes" || \
+if test "x$ax_cv_boost_program_options" != "xyes" || \
    test "x$ax_cv_boost_system" != "xyes" || \
-   test "x$ax_cv_boost_thread" != "xyes" || \
    test "x$scope_ok" != "xyes"; then
   AC_MSG_WARN([])
   AC_MSG_WARN([You will be unable to compile and run the tests because:])
   AC_MSG_WARN([])
-  if test "x$ax_cv_boost_chrono" != "xyes"; then
-    AC_MSG_WARN([  * boost::chrono is unavailable])
-  fi
   if test "x$ax_cv_boost_program_options" != "xyes"; then
     AC_MSG_WARN([  * boost::program_options is unavailable])
   fi
   if test "x$ax_cv_boost_system" != "xyes"; then
     AC_MSG_WARN([  * boost::system is unavailable])
-  fi
-  if test "x$ax_cv_boost_thread" != "xyes"; then
-    AC_MSG_WARN([  * boost::thread is unavailable])
   fi
   if test "x$scope_ok" != "xyes"; then
     AC_MSG_WARN([  * Scope test framework is unavailable])
