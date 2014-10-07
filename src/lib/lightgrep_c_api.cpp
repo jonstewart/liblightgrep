@@ -83,7 +83,11 @@ int lg_parse_pattern(LG_HPATTERN hPattern,
                      LG_Error** err)
 {
   // set up the pattern handle
-  hPattern->Pat = {pattern, options->FixedString, options->CaseInsensitive};
+  hPattern->Pat = {
+    pattern,
+    static_cast<bool>(options->FixedString),
+    static_cast<bool>(options->CaseInsensitive)
+  };
 
   return trapWithVals(
     [hPattern](){ parseAndReduce(hPattern->Pat, hPattern->Tree); },
@@ -386,11 +390,10 @@ namespace {
       lg_destroy_context
     );
 
-    hCtx->Impl = VmInterface::create();
+    hCtx->Impl = VmInterface::create(hProg->Impl);
     #ifdef LBT_TRACE_ENABLED
     hCtx->Impl->setDebugRange(beginTrace, endTrace);
     #endif
-    hCtx->Impl->init(hProg->Impl);
 
     return hCtx.release();
   }
@@ -434,8 +437,6 @@ uint64_t lg_search(LG_HCONTEXT hCtx,
                        void* userData,
                        LG_HITCALLBACK_FN callbackFn)
 {
-// FIXME: return Active[0]->Start
-
   return trapWithRetval(std::bind(&VmInterface::search, hCtx->Impl, (const byte*) bufStart, (const byte*) bufEnd, startOffset, callbackFn, userData), std::numeric_limits<uint64_t>::max());
 }
 

@@ -1,6 +1,9 @@
 ACLOCAL_AMFLAGS = -I m4
 
-AM_CPPFLAGS = -Iinclude
+AM_CPPFLAGS = -Iinclude $(BOOST_CPPFLAGS) $(ICU_CPPFLAGS) $(LG_CPPFLAGS)
+AM_CFLAGS = $(LG_CFLAGS)
+AM_CXXFLAGS = $(LG_CXXFLAGS)
+AM_LDFLAGS = $(BOOST_LDFLAGS) $(ICU_LDFLAGS) $(LG_LDFLAGS)
 AM_YFLAGS = -r solved
 
 LG_LIB = src/lib/liblightgrep.la
@@ -8,7 +11,11 @@ LG_LIB_INT = src/lib/liblightgrepint.la
 
 lib_LTLIBRARIES = $(LG_LIB)
 
+if BUILD_DLL
+src_lib_liblightgrep_la_SOURCES = src/lib/version.rc
+else
 src_lib_liblightgrep_la_SOURCES =
+endif
 nodist_EXTRA_src_lib_liblightgrep_la_SOURCES = dummy.cpp # forces C++ linking
 
 noinst_LTLIBRARIES = $(LG_LIB_INT)
@@ -60,6 +67,11 @@ src_lib_liblightgrepint_la_SOURCES = \
 # src_lib_liblightgrep_la_LDFLAGS = -export-symbols-regex '^lg_'
 
 src_lib_liblightgrep_la_LIBADD = $(LG_LIB_INT) $(ICU_LIBS) $(STDCXX_LIB)
+if BUILD_DLL
+src_lib_liblightgrep_la_LDFLAGS = $(AM_LDFLAGS) $(LG_LIB_LDFLAGS) -avoid-version
+else
+src_lib_liblightgrep_la_LDFLAGS = $(AM_LDFLAGS) $(LG_LIB_LDFLAGS)
+endif
 
 src_lib_liblightgrep_ladir = $(includedir)/lightgrep
 
@@ -110,16 +122,25 @@ test_test_SOURCES = \
 	test/stest.cpp \
 	test/test.cpp \
 	test/test_ascii.cpp \
-	test/test_auto_searches_1.cpp \
-	test/test_auto_searches_2.cpp \
-	test/test_auto_searches_3.cpp \
-	test/test_auto_searches_4.cpp \
-	test/test_auto_searches_5.cpp \
-	test/test_auto_searches_6.cpp \
-	test/test_auto_searches_7.cpp \
-	test/test_auto_searches_8.cpp \
-	test/test_auto_searches_multi_1.cpp \
-	test/test_auto_searches_multi_2.cpp \
+	test/test_auto_search_1.cpp \
+	test/test_auto_search_2.cpp \
+	test/test_auto_search_3.cpp \
+	test/test_auto_search_4.cpp \
+	test/test_auto_search_5.cpp \
+	test/test_auto_search_6.cpp \
+	test/test_auto_search_7.cpp \
+	test/test_auto_search_8.cpp \
+	test/test_auto_search_multi_1.cpp \
+	test/test_auto_search_multi_2.cpp \
+	test/test_auto_starts_with_1.cpp \
+	test/test_auto_starts_with_2.cpp \
+	test/test_auto_starts_with_3.cpp \
+	test/test_auto_starts_with_4.cpp \
+	test/test_auto_starts_with_5.cpp \
+	test/test_auto_starts_with_6.cpp \
+	test/test_auto_starts_with_7.cpp \
+	test/test_auto_starts_with_multi_1.cpp \
+	test/test_auto_starts_with_multi_2.cpp \
 	test/test_basic.cpp \
 	test/test_byteset.cpp \
 	test/test_bytesource.cpp \
@@ -144,9 +165,10 @@ test_test_SOURCES = \
 	test/test_rewriter.cpp \
 	test/test_rotencoder.cpp \
 	test/test_search_data.cpp \
-	test/test_searches.cpp \
-	test/test_searches_data.cpp \
+	test/test_search_data_driver.cpp \
+	test/test_search.cpp \
 	test/test_sparseset.cpp \
+	test/test_starts_with.cpp \
 	test/test_states.cpp \
 	test/test_testregex_basic_modified.cpp \
 	test/test_thread.cpp \
@@ -162,5 +184,36 @@ test_test_SOURCES = \
 	test/test_xorencoder.cpp
 
 test_test_CPPFLAGS = $(AM_CPPFLAGS) $(SCOPE_CPPFLAGS)
-test_test_LDFLAGS = $(BOOST_LDFLAGS)
-test_test_LDADD = $(LG_LIB_INT) $(BOOST_PROGRAM_OPTIONS_LIB) $(BOOST_SYSTEM_LIB) $(BOOST_ASIO_LIB) $(ICU_LIBS) $(STDCXX_LIB)
+test_test_LDFLAGS = $(AM_LDFLAGS) $(BOOST_LDFLAGS)
+test_test_LDADD = $(LG_LIB_INT) $(BOOST_PROGRAM_OPTIONS_LIB) $(BOOST_SYSTEM_LIB) $(BOOST_ASIO_LIB) $(BOOST_THREAD_LIB) $(BOOST_CHRONO_LIB) $(ICU_LIBS) $(STDCXX_LIB)
+
+pkgconfigdir = $(libdir)/pkgconfig
+nodist_pkgconfig_DATA = src/lib/lightgrep.pc
+
+src/lib/lightgrep.pc: src/lib/lightgrep.pc.in Makefile
+	sed -e 's![@]prefix[@]!$(prefix)!g' \
+      -e 's![@]exec_prefix[@]!$(exec_prefix)!g' \
+      -e 's![@]includedir[@]!$(includedir)!g' \
+      -e 's![@]libdir[@]!$(libdir)!g' \
+      -e 's![@]PACKAGE_VERSION[@]!$(PACKAGE_VERSION)!g' \
+      $< >$@
+
+if BUILD_DLL
+src/lib/.libs/version.o: config.h
+
+# assume rc files are UTF-8 (Windows codepage 65001)
+RCFLAGS = -c 65001
+
+LTRCCOMPILE = $(LIBTOOL) $(AM_V_lt) --tag=RC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(RC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(filter-out -mthreads,$(AM_CPPFLAGS) $(CPPFLAGS)) $(RCFLAGS)
+
+.rc.lo:
+	$(LTRCCOMPILE) -i $< -o $@
+endif
+
+#if BUILD_DLL
+#msvclibdir = $(libdir)
+#nodist_msvclib_DATA = src/lib/.libs/liblightgrep.lib
+#
+#src/lib/.libs/liblightgrep.lib: src/lib/.libs/liblightgrep-0.dll
+#	$(DLLTOOL) -D $< -d src/lib/.libs/liblightgrep.def -l $@
+#endif

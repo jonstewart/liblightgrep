@@ -3,7 +3,7 @@
 AC_PREREQ([2.64])
 # TODO: required versions for automake, libtool?
 
-AC_INIT([liblightgrep], [0.0], [BUG-REPORT-ADDRESS])
+AC_INIT([liblightgrep], [1.3.0], [joel@lightboxtechnologies.com])
 
 # Set the default C and C++ compilation flags to nothing.
 # Do this immediately after AC_INIT, as other macros might invoke
@@ -23,8 +23,43 @@ AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_SRCDIR([src/lib/vm.cpp])
 AC_CONFIG_HEADERS([config.h])
 
+#AM_INIT_AUTOMAKE([1.12 foreign serial-tests subdir-objects])
 AM_INIT_AUTOMAKE([foreign subdir-objects])
 LT_INIT
+
+#
+# metadata
+#
+
+# Decompose the version number.
+#
+# We must do this rather than construct PACKAGE_VERSION from the components
+# because AC_INIT rejects anything but a literal for the version number.
+PACKAGE_VERSION_MAJOR=`echo "$PACKAGE_VERSION" | cut -d. -f1`
+PACKAGE_VERSION_MINOR=`echo "$PACKAGE_VERSION" | cut -d. -f2`
+PACKAGE_VERSION_MICRO=`echo "$PACKAGE_VERSION" | cut -d. -f3`
+
+AC_SUBST([PACKAGE_VERSION_MAJOR])
+AC_SUBST([PACKAGE_VERSION_MINOR])
+AC_SUBST([PACKAGE_VERSION_MICRO])
+
+AC_DEFINE_UNQUOTED(PACKAGE_VERSION_MAJOR, $PACKAGE_VERSION_MAJOR, [Define to the major version of this package.])
+AC_DEFINE_UNQUOTED(PACKAGE_VERSION_MINOR, $PACKAGE_VERSION_MINOR, [Define to the minor version of this package.])
+AC_DEFINE_UNQUOTED(PACKAGE_VERSION_MICRO, $PACKAGE_VERSION_MICRO, [Define to the micro version of this package.])
+
+PACKAGE_YEAR=`date +%Y`
+
+AC_SUBST([PACKAGE_YEAR])
+AC_DEFINE_UNQUOTED(PACKAGE_YEAR, $PACKAGE_YEAR, [Define to the current year.])
+
+PACKAGE_COMPANY="Lightbox Technologies, Inc."
+
+AC_SUBST([PACKAGE_COMPANY])
+AC_DEFINE_UNQUOTED(PACKAGE_COMPANY, "$PACKAGE_COMPANY", [Define to the owner of this package.])
+
+PACKAGE_DESCRIPTION="not the worst forensics regexp engine"
+AC_SUBST([PACKAGE_DESCRIPTION])
+AC_DEFINE_UNQUOTED(PACKAGE_DESCRIPTION, "$PACKAGE_DESCRIPTION", [Define to the description of this package.])
 
 #
 # common
@@ -34,11 +69,11 @@ AC_PROG_CXX
 AM_PROG_CC_C_O
 
 AC_LANG([C])
-AX_APPEND_COMPILE_FLAGS([-std=c1x -W -Wall -Wextra -pedantic -pipe -O3], [CFLAGS])
+AX_APPEND_COMPILE_FLAGS([-std=c1x -W -Wall -Wextra -pedantic -pipe -O3], [LG_CFLAGS])
 
 AC_LANG([C++])
 AX_CXX_COMPILE_STDCXX_11([noext], [mandatory])
-AX_APPEND_COMPILE_FLAGS([-W -Wall -Wextra -Wnon-virtual-dtor -pedantic -pipe -O3], [CXXFLAGS])
+AX_APPEND_COMPILE_FLAGS([-W -Wall -Wextra -Wnon-virtual-dtor -pedantic -pipe -O3], [LG_CXXFLAGS])
 
 AC_PROG_INSTALL
 
@@ -46,8 +81,8 @@ AC_PROG_INSTALL
 # we want to keep.
 case "$host" in
 *-*-mingw*)
-  LG_REMOVE_FLAGS([CFLAGS], ['-g -O2'])
-  LG_REMOVE_FLAGS([CXXFLAGS], ['-g -O2'])
+  LG_REMOVE_FLAGS([CFLAGS], ['-O2'])
+  LG_REMOVE_FLAGS([CXXFLAGS], ['-O2'])
   ;;
 esac
 
@@ -55,87 +90,54 @@ esac
 # regex grammar
 # check bison is installed and print its version
 #
-AX_PROG_BISON([echo -n "bison version is... " && bison --version | head -n 1])
+AX_PROG_BISON([printf "bison version is... " && bison --version | head -n 1])
 
 # libintl.h would be necessary if we used Bison's i18n setup
 #AC_CHECK_HEADERS([libintl.h])
 
 #
+# Fat or thin shared library?
+#
+
+AC_ARG_ENABLE([shared-fat],
+  [AS_HELP_STRING([--enable-shared-fat],
+    [statically link liblightgrep to its dependencies (MinGW only)])])
+
+if test "x$enable_shared_fat" = "xyes"; then
+  case "$host" in
+  *-*-mingw*)
+    if test "x$enable_shared" != "xyes"; then
+      AC_MSG_ERROR([--enable-shared-fat requires --enable-shared.])
+    fi
+    echo "Enabling fat shared lib. Your shared liblightgrep is so fat, it will contain all of its dependencies."
+    ;;
+  *)
+    AC_MSG_ERROR([--enable-shared-fat requires building with MinGW.])
+    ;;
+  esac
+fi
+
+#
 # ICU
 #
 
-# Get the path to icu-config, if we want to use ICU other than the system one.
-AC_ARG_WITH([icu],
-  [AS_HELP_STRING([--with-icu=ARG],
-    [use icu-config from the specified location])],
-  [ICU_CONFIG="$withval"],
-  [ICU_CONFIG=""])
+PKG_CHECK_MODULES([ICU], [icu-uc])
 
-if test -z "$ICU_CONFIG"; then
-  AC_MSG_NOTICE([No path given for --with-icu, using icu-config from your PATH.])
-else
-  if test "x$ICU_CONFIG" = "xyes"; then
-    AC_MSG_WARN([ICU_CONFIG = 'yes'. Did you forget to specify an argument for --with-icu?])
-  fi
+ICU_CPPFLAGS="$ICU_CFLAGS"
+ICU_CFLAGS=""
 
-  # Add a trailing slash if we don't have one
-  case "$ICU_CONFIG" in
-  */) ;;
-  *) ICU_CONFIG+='/' ;;
-  esac
+AX_APPEND_COMPILE_FLAGS([ \
+  -DU_USING_ICU_NAMESPACE=0 \
+  -DU_CHARSET_IS_UTF8=1 \
+  -DUNISTR_FROM_CHAR_EXPLICIT=explicit \
+  -DUNSTR_FROM_STRING_EXPLICIT=explicit \
+], [ICU_CPPFLAGS])
 
-  # Check that icu-config exists
-  if test ! -f "$ICU_CONFIG/icu-config"; then
-    AC_MSG_ERROR([Path "${ICU_CONFIG}icu-config" does not exist])
-  fi
+if test "x$enable_shared" != "xyes" -o "x$enable_shared_fat" = "xyes"; then
+  AX_APPEND_COMPILE_FLAGS([-DU_STATIC_IMPLEMENTATION], [ICU_CPPFLAGS])
 fi
 
-# FIXME: icu-config from ICU cross-compiled with mingw wants libicuuc.dll,
-# which won't exist if ICU was compiled static only, so we temporarily add
-# --noverify until we figure out what to do about this.
-ICU_CONFIG+='icu-config --noverify'
-
-AC_MSG_WARN([Disregard the next few lines where ICU_* are printed.])
-AC_MSG_WARN([They're all wrong but we fix them up before using them.])
-AX_CHECK_ICU(1.48)
-echo 'found ICU' `icu-config --version`
-
-# ICU_LIBS which are wrong on Windows (and we handle ourselves):
-#   -lpthread
-#
-# ICU_LIBS which are wrong for static Windows builds:
-#   -licuuc   -> -lsicuuc
-#   -licudata -> -lsicudt
-#
-# ICU_LIBS which are wrong everywhere:
-#   -licui18n
-#
-LG_REMOVE_FLAGS([ICU_LIBS], ['-licui18n -lpthread'])
-
-# FIXME: On Windows, static ICU libs have names different from dynamic ones.
-# This is problematic, because which should be linked against is known only
-# when we know if we're statically or dynamically linking.
-case "$host" in
-*-*-mingw*)
-  LG_REPLACE_FLAG([ICU_LIBS], [-licuuc],   [-lsicuuc])
-  LG_REPLACE_FLAG([ICU_LIBS], [-licudata], [-lsicudt])
-  ;;
-esac
-
-# ICU_C(XX)FLAGS we don't want anywhere:
-#   -ansi -std=c99
-#
-# ICU_C(XX)FLAGS which conflict with ones we might set:
-#   -O2 -O3 -g -pthread -mthreads
-#
-duff_icu_compile_flags='-ansi -g -O2 -O3 -std=c99 -pthread -mthreads'
-if test x"$CXX" = "xclang++" ; then
-  # These cause clang to freak out on Fedora 18
-  duff_icu_compile_flags+=' -Wp,-D_FORTIFY_SOURCE=2'
-fi
-
-LG_REMOVE_FLAGS([ICU_CFLAGS],   [$duff_icu_compile_flags])
-LG_REMOVE_FLAGS([ICU_CXXFLAGS], [$duff_icu_compile_flags])
+AC_SUBST([ICU_CPPFLAGS])
 
 #
 # Boost headers
@@ -162,6 +164,23 @@ fi
 # tests
 #
 
+# Use std::thread if we can, otherwise use boost::thread.
+AS_ECHO_N("checking for std::thread... ")
+CPPFLAGS_saved="$CPPFLAGS"
+CPPFLAGS="-std=c++11"
+AC_TRY_COMPILE([#include <thread>],
+               [std::thread t;],
+               [have_std_thread="yes"], [have_std_thread="no"])
+CPPFLAGS="$CPPFLAGS_saved"
+AS_ECHO($have_std_thread)
+
+if test "x$have_std_thread" = "xyes"; then
+  AC_DEFINE(HAVE_STD_THREAD,1,[Define to 1 if std::thread is available.])
+else
+  AX_BOOST_CHRONO
+  AX_BOOST_THREAD
+fi
+
 # Boost libs used by tests
 AX_BOOST_PROGRAM_OPTIONS
 AX_BOOST_SYSTEM
@@ -179,7 +198,7 @@ if test "x$with_scope" != "xno"; then
   CPPFLAGS="$SCOPE_CPPFLAGS"
   export CPPFLAGS
 
-  AC_CHECK_HEADERS([scope/test.h],[scope_ok="yes"])
+  AC_CHECK_HEADER([scope/test.h],[scope_ok="yes"])
 
   CPPFLAGS="$CPPFLAGS_saved"
 
@@ -192,7 +211,14 @@ fi
 # Tell the user why not if he won't be able to compile the tests
 if test "x$ax_cv_boost_program_options" != "xyes" || \
    test "x$ax_cv_boost_system" != "xyes" || \
-   test "x$scope_ok" != "xyes"; then
+   test "x$scope_ok" != "xyes" || \
+   ( \
+      test "x$have_std_thread" != "xyes" && \
+      ( \
+        test "x$ax_cv_boost_thread" != "xyes" || \
+        test "x$ax_cv_boost_chrono" != "xyes" \
+      ) \
+   ) ; then
   AC_MSG_WARN([])
   AC_MSG_WARN([You will be unable to compile and run the tests because:])
   AC_MSG_WARN([])
@@ -202,17 +228,27 @@ if test "x$ax_cv_boost_program_options" != "xyes" || \
   if test "x$ax_cv_boost_system" != "xyes"; then
     AC_MSG_WARN([  * boost::system is unavailable])
   fi
+  if test "x$have_std_thread" != "xyes" && \
+    ( \
+      test "x$ax_cv_boost_thread" != "xyes" || \
+      test "x$ax_cv_boost_chrono" != "xyes" \
+    ) ; then
+    AC_MSG_WARN([  * neither std::thread nor boost::thread and boost::chrono are available])
+  fi
   if test "x$scope_ok" != "xyes"; then
     AC_MSG_WARN([  * Scope test framework is unavailable])
   fi
   AC_MSG_WARN([])
 fi
 
-# Boost ASIO needs ws2_32 and mswsock on Windows
 case "$host" in
 *-*-mingw*)
+  # Boost ASIO needs ws2_32 and mswsock on Windows
   BOOST_ASIO_LIB="-lws2_32 -lmswsock"
   AC_SUBST([BOOST_ASIO_LIB])
+
+  # FIXME: wrong boost_system lib gets detected!
+  BOOST_SYSTEM_LIB=`echo "$BOOST_SYSTEM_LIB" | sed 's/.dll/-mt/'`
   ;;
 esac
 
@@ -221,15 +257,20 @@ esac
 # 
 case "$host" in
 *-*-mingw*)
-  AX_APPEND_FLAG([-mthreads], [CPPLAGS])
-  AX_APPEND_LINK_FLAGS([-mthreads], [LDFLAGS])
+  AX_APPEND_COMPILE_FLAGS([-mthreads], [LG_CPPLAGS])
+  AX_APPEND_LINK_FLAGS([-mthreads], [LG_LDFLAGS])
   ;;
 *-apple-darwin*)
   ;;
 *)
-  AX_APPEND_FLAG([-pthread], [CPPFLAGS])
-  AX_APPEND_LINK_FLAGS([-pthread], [LDFLAGS])
+  AX_APPEND_COMPILE_FLAGS([-pthread], [LG_CPPFLAGS])
+  AX_APPEND_LINK_FLAGS([-pthread], [LG_LDFLAGS])
 esac
+
+AC_SUBST([LG_CPPFLAGS])
+AC_SUBST([LG_CFLAGS])
+AC_SUBST([LG_CXXFLAGS])
+AC_SUBST([LG_LDFLAGS])
 
 #
 # C++ library
@@ -263,50 +304,43 @@ if test "x$enable_shared" != "xyes"; then
   CXXLD="$CXX -all-static"
   CCLD="$CC -all-static"
 
-  AX_APPEND_FLAG([-DBOOST_THREAD_USE_LIB], [CPPFLAGS])
-
-  case "$host" in
-  *-*-mingw*)
-    # FIXME: wrong boost_system lib gets detected!
-    BOOST_SYSTEM_LIB=`echo "$BOOST_SYSTEM_LIB" | sed 's/.dll/-mt/'`
-    ;;
-  esac
-
   case "$host" in
   i686-*-mingw*)
     # FIXME: Really? This looks like it's just asking for trouble...
-    AX_APPEND_LINK_FLAGS([-Wl,--allow-multiple-definition], [LDFLAGS])
+    AX_APPEND_LINK_FLAGS([-Wl,--allow-multiple-definition], [LG_LIB_LDFLAGS])
     ;;
   esac
 else
   CXXLD="$CXX"
   CCLD="$CC"
+
+  case "$host" in
+  *-*-mingw*)
+    # -no-undefined is a libtool flag; adding it with AX_APPEND_LINK_FLAGS
+    # will fail because that tries flags with LD. So don't do that.
+    AX_APPEND_FLAG([-no-undefined], [LG_LIB_LDFLAGS])
+    LG_LIB_LDFLAGS="$LG_LIB_LDFLAGS -Wl,--output-def -Wl,src/lib/.libs/$PACKAGE.def"
+    LT_LANG([Windows Resource])
+    ;;
+  esac
 fi
+
+AM_CONDITIONAL([BUILD_DLL], [test "x$enable_shared" = "xyes" && echo "$host" | grep -q mingw])
 
 AC_SUBST([CXXLD])
 AC_SUBST([CCLD])
+
+AC_SUBST([LG_LIB_LDFLAGS])
 
 #
 # Cleanup flags
 #
 
-AC_LANG([C])
-AX_APPEND_COMPILE_FLAGS([$ICU_CFLAGS], [CFLAGS]) 
-
-AC_LANG([C++])
-AX_APPEND_COMPILE_FLAGS([$BOOST_CPPFLAGS $ICU_CPPFLAGS], [CPPFLAGS])
-AX_APPEND_COMPILE_FLAGS([$BOOST_CXXFLAGS $ICU_CXXFLAGS], [CXXFLAGS]) 
-
-LG_UNIQ_FLAGS([CPPFLAGS])
-LG_UNIQ_FLAGS([CFLAGS])
-LG_UNIQ_FLAGS([CXXFLAGS])
-
-
-
 # TODO: libtre has a nice display we can steal
 AC_MSG_NOTICE([ICU_CPPFLAGS: $ICU_CPPFLAGS])
 AC_MSG_NOTICE([ICU_CFLAGS:   $ICU_CFLAGS])
 AC_MSG_NOTICE([ICU_CXXFLAGS: $ICU_CXXFLAGS])
+AC_MSG_NOTICE([ICU_LIBS:     $ICU_LIBS])
 
 AC_MSG_NOTICE([BOOST_CPPFLAGS: $BOOST_CPPFLAGS])
 AC_MSG_NOTICE([BOOST_CXXFLAGS: $BOOST_CXXFLAGS])
@@ -321,3 +355,12 @@ AC_MSG_NOTICE([LDFLAGS:  $LDFLAGS])
 
 AC_CONFIG_FILES([Makefile])
 AC_OUTPUT
+
+# Force static linking of dependencies for our fat DLL.
+if test "x$enable_shared_fat" = "xyes"; then
+  # NB: This is likely to be fragile. It works only because the current
+  # version of libtool doesn't alter whole_archive_flag_spec and happens
+  # to put it in the right place in the linking command for our DLL.
+  sed -i '/^whole_archive_flag_spec=/s/"$/ \\${wl}-static"/' libtool
+  echo 'Adjusted libtool for building fat DLL'
+fi
