@@ -1,6 +1,8 @@
+# FIXME: use $(srcdir), $(builddir) everywhere
+
 ACLOCAL_AMFLAGS = -I m4
 
-AM_CPPFLAGS = -Iinclude $(BOOST_CPPFLAGS) $(ICU_CPPFLAGS) $(LG_CPPFLAGS)
+AM_CPPFLAGS = -I$(srcdir)/include $(BOOST_CPPFLAGS) $(ICU_CPPFLAGS) $(LG_CPPFLAGS)
 AM_CFLAGS = $(LG_CFLAGS)
 AM_CXXFLAGS = $(LG_CXXFLAGS)
 AM_LDFLAGS = $(BOOST_LDFLAGS) $(ICU_LDFLAGS) $(LG_LDFLAGS)
@@ -114,6 +116,7 @@ src_what_what_LDADD = $(LG_LIB_INT) $(ICU_LIBS) $(STDCXX_LIB)
 
 check_PROGRAMS = test/test
 TESTS = $(check_PROGRAMS)
+AM_TESTS_ENVIRONMENT = builddir=`pwd`;
 
 test_test_SOURCES = \
 	test/data_reader.cpp \

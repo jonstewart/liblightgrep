@@ -3,7 +3,7 @@
 AC_PREREQ([2.64])
 # TODO: required versions for automake, libtool?
 
-AC_INIT([liblightgrep], [1.3.0], [joel@lightboxtechnologies.com])
+AC_INIT([liblightgrep], [1.5.0], [joel@lightboxtechnologies.com])
 
 # Set the default C and C++ compilation flags to nothing.
 # Do this immediately after AC_INIT, as other macros might invoke
@@ -190,7 +190,7 @@ AC_ARG_WITH([scope],
   [AS_HELP_STRING([--with-scope=ARG],
     [use Scope headers from the specified location])],
   [SCOPE_CPPFLAGS="-I$withval"],
-  [SCOPE_CPPFLAGS="-Ivendors/scope"])
+  [SCOPE_CPPFLAGS="-I$srcdir/vendors/scope"])
 
 if test "x$with_scope" != "xno"; then
   # test Scope without adding its path to CPPFLAGS generally
@@ -251,6 +251,8 @@ case "$host" in
   BOOST_SYSTEM_LIB=`echo "$BOOST_SYSTEM_LIB" | sed 's/.dll/-mt/'`
   ;;
 esac
+
+AC_DEFINE_UNQUOTED(TDATDIR, "$srcdir/test/data", [Define to the path to the test data.])
 
 #
 # Threading
@@ -353,7 +355,7 @@ AC_MSG_NOTICE([CXXFLAGS: $CXXFLAGS])
 AC_MSG_NOTICE([LIBS:     $LIBS])
 AC_MSG_NOTICE([LDFLAGS:  $LDFLAGS])
 
-AC_CONFIG_FILES([Makefile])
+AC_CONFIG_FILES([Makefile liblightgrep.spec mingw-liblightgrep.spec])
 AC_OUTPUT
 
 # Force static linking of dependencies for our fat DLL.
