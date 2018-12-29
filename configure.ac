@@ -3,7 +3,7 @@
 AC_PREREQ([2.64])
 # TODO: required versions for automake, libtool?
 
-AC_INIT([liblightgrep], [1.4.1], [joel@lightboxtechnologies.com])
+AC_INIT([liblightgrep], [1.5.0], [joel@lightboxtechnologies.com])
 
 # Set the default C and C++ compilation flags to nothing.
 # Do this immediately after AC_INIT, as other macros might invoke
@@ -364,5 +364,10 @@ if test "x$enable_shared_fat" = "xyes"; then
   # version of libtool doesn't alter whole_archive_flag_spec and happens
   # to put it in the right place in the linking command for our DLL.
   sed -i '/^whole_archive_flag_spec=/s/"$/ \\${wl}-static"/' libtool
+
+  # We want NO dependencies for a fat DLL. libgcc_s is a stub for
+  # libgcc_s_seh-1.dll. libgcc_eh is the corresponding static lib.
+  sed -i '/^postdeps=/s/-lgcc_s/-lgcc_eh/g' libtool
+
   echo 'Adjusted libtool for building fat DLL'
 fi
