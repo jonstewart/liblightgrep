@@ -29,6 +29,7 @@ enum OpCodes {
   EITHER_OP,
   RANGE_OP,
   ANY_OP,
+  SMALL_TABLE_OP,
   FINISH_OP,
   FORK_OP,
   JUMP_OP,
@@ -56,11 +57,18 @@ struct InstructionType2 {
   byte First, Last;
 };
 
+struct InstructionType3 {
+  byte Num,
+       First,
+       Last;
+};
+
 union Operand {
   unsigned  Offset : 24;
 
   InstructionType1 T1;
   InstructionType2 T2;
+  InstructionType3 T3;
 };
 
 struct Instruction {
@@ -103,6 +111,7 @@ struct Instruction {
   static Instruction makeBitVector();
   static Instruction makeJump(Instruction* ptr, uint32_t offset);
   static Instruction makeJumpTableRange(byte first, byte last);
+  static Instruction makeSmallTable(byte num, byte first, byte last);
   static Instruction makeLabel(uint32_t label);
   static Instruction makeMatch();
   static Instruction makeFork(Instruction* ptr, uint32_t offset);

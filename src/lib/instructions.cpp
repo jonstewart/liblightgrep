@@ -42,37 +42,54 @@ std::string testNot(const byte flags) {
   return flags & Instruction::NEGATE ? "not ": "";
 }
 
+std::string printValue(byte val) {
+  std::stringstream buf;
+  buf << "0x" << HexCode<byte>(val) << "/'" << val << '\'';
+  return buf.str();
+}
+
+std::string printRange(const Instruction& i) {
+  std::stringstream buf;
+  buf << printValue(i.Op.T2.First) << '-'
+      << printValue(i.Op.T2.Last);
+  return buf.str();
+}
+
 // FIXME: It is stupid and irritating to print unprintable characters (such as \n)
 std::string Instruction::toString() const {
   std::string ret;
   std::ostringstream buf;
   switch (OpCode) {
-  case BYTE_OP:
-    buf << "Byte " << testNot(Op.T1.Flags) << "0x" << HexCode<byte>(Op.T1.Byte)
-      << "/'" << Op.T1.Byte << '\'';
-    break;
-  case EITHER_OP:
-    buf << "Either " << testNot(Op.T2.Flags) << "0x" << HexCode<byte>(Op.T2.First)
-      << "/'" << Op.T2.First << "', 0x" << HexCode<byte>(Op.T2.Last) << "/'" << Op.T2.Last << '\'';
-    break;
-  case RANGE_OP:
-    buf << "Range " << testNot(Op.T2.Flags) << "0x" << HexCode<byte>(Op.T2.First)
-      << "/'" << Op.T2.First << "'-0x" << HexCode<byte>(Op.T2.Last) << "/'" << Op.T2.Last << '\'';
-    break;
-  case ANY_OP:
-    buf << "Any";
+  case JUMP_TABLE_RANGE_OP:
+    buf << "JmpTblRange " << printRange(*this);
     break;
   case BIT_VECTOR_OP:
     buf << "BitVector";
     break;
-  case JUMP_OP:
-    buf << "Jump 0x" << HexCode<uint32_t>(*reinterpret_cast<const uint32_t*>(this+1)) << '/' << std::dec << (*reinterpret_cast<const uint32_t*>(this+1));
+  case BYTE_OP:
+    buf << "Byte " << testNot(Op.T1.Flags) << printValue(Op.T1.Byte);
     break;
-  case JUMP_TABLE_RANGE_OP:
-    buf << "JmpTblRange 0x" << HexCode<byte>(Op.T2.First) << "/'" << Op.T2.First << "'-0x" << HexCode<byte>(Op.T2.Last) << "/'" << Op.T2.Last << '\'';
+  case EITHER_OP:
+    buf << "Either " << testNot(Op.T2.Flags) << printValue(Op.T2.First)
+        << ", " << printValue(Op.T2.Last);
+    break;
+  case RANGE_OP:
+    buf << "Range " << testNot(Op.T2.Flags) << printRange(*this);
+    break;
+  case ANY_OP:
+    buf << "Any";
+    break;
+  case SMALL_TABLE_OP:
+    buf << "SmallTblRange " << uint32_t(Op.T3.Num) << ", " << printRange(*this);
+    break;
+  case FINISH_OP:
+    buf << "Finish";
     break;
   case FORK_OP:
     buf << "Fork 0x" << HexCode<uint32_t>(*reinterpret_cast<const uint32_t*>(this+1)) << '/' << std::dec << (*reinterpret_cast<const uint32_t*>(this+1));
+    break;
+  case JUMP_OP:
+    buf << "Jump 0x" << HexCode<uint32_t>(*reinterpret_cast<const uint32_t*>(this+1)) << '/' << std::dec << (*reinterpret_cast<const uint32_t*>(this+1));
     break;
   case CHECK_HALT_OP:
     buf << "CheckHalt 0x" << HexCode<uint32_t>(Op.Offset) << '/' << std::dec << Op.Offset;
@@ -83,14 +100,11 @@ std::string Instruction::toString() const {
   case MATCH_OP:
     buf << "Match";
     break;
-  case ADJUST_START_OP:
-    buf << "AdjustStart -" << Op.Offset;
-    break;
   case HALT_OP:
     buf << "Halt";
     break;
-  case FINISH_OP:
-    buf << "Finish";
+  case ADJUST_START_OP:
+    buf << "AdjustStart -" << Op.Offset;
     break;
   default:
     buf << "* UNRECOGNIZED *";
@@ -154,6 +168,13 @@ Instruction Instruction::makeJump(Instruction* ptr, uint32_t offset) {
 Instruction Instruction::makeJumpTableRange(byte first, byte last) {
   Instruction i = makeRange(first, last);
   i.OpCode = JUMP_TABLE_RANGE_OP;
+  return i;
+}
+
+Instruction Instruction::makeSmallTable(byte num, byte first, byte last) {
+  Instruction i = makeRange(first, last);
+  i.OpCode = SMALL_TABLE_OP;
+  i.Op.T3.Num = num;
   return i;
 }
 

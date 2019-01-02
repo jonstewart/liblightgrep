@@ -153,6 +153,17 @@ SCOPE_TEST(makeAny) {
   SCOPE_ASSERT_EQUAL("Any", i.toString());
 }
 
+SCOPE_TEST(MakeSmallTable) {
+  Instruction i = Instruction::makeSmallTable(3, 33, 45);
+  SCOPE_ASSERT_EQUAL(SMALL_TABLE_OP, i.OpCode);
+  SCOPE_ASSERT_EQUAL(1u, i.wordSize());
+  SCOPE_ASSERT_EQUAL(3u, i.Op.T3.Num);
+  SCOPE_ASSERT_EQUAL(33u, i.Op.T3.First);
+  SCOPE_ASSERT_EQUAL(45u, i.Op.T3.Last);
+  SCOPE_ASSERT_EQUAL("SmallTblRange 3, 0x21/'!'-0x2d/'-'", i.toString());
+  SCOPE_EXPECT(Instruction::makeSmallTable(5, 1, 0), std::range_error);
+}
+
 SCOPE_TEST(makeAdjustStart) {
   Instruction i = Instruction::makeAdjustStart(4);
   SCOPE_ASSERT_EQUAL(ADJUST_START_OP, i.OpCode);
