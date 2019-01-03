@@ -62,7 +62,8 @@ void createJumpTable(const CodeGenHelper& cg, Instruction const* const base, Ins
   Instruction* cur = start,
              * indirectTbl;
 
-  auto tbl(pivotStates(v, graph));
+  TransitionTbl tbl;
+  pivotStates(v, graph, tbl);
 
   uint32_t first, last;
   std::tie(first, last) = minAndMaxValues(tbl);

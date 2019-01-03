@@ -346,7 +346,8 @@ SCOPE_TEST(testPivotTransitions) {
   fsm[2].IsMatch = true;
   fsm[2].Label = 1;
 
-  std::vector<std::vector<NFA::VertexDescriptor>> tbl = pivotStates(0, fsm);
+  std::vector<std::vector<NFA::VertexDescriptor>> tbl;
+  pivotStates(0, fsm, tbl);
   SCOPE_ASSERT_EQUAL(256u, tbl.size());
   for (uint32_t i = 0; i < 256; ++i) {
     if (i == 'a') {
@@ -371,6 +372,7 @@ SCOPE_TEST(testMaxOutbound) {
   edge(0, 2, fsm, fsm.TransFac->getByte('a'));
   edge(0, 3, fsm, fsm.TransFac->getByte('b'));
   edge(0, 4, fsm, fsm.TransFac->getByte('c'));
-  std::vector<std::vector<NFA::VertexDescriptor>> tbl = pivotStates(0, fsm);
+  std::vector<std::vector<NFA::VertexDescriptor>> tbl;
+  pivotStates(0, fsm, tbl);
   SCOPE_ASSERT_EQUAL(2u, maxOutbound(tbl));
 }

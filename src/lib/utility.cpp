@@ -108,19 +108,19 @@ std::pair<uint32_t,std::bitset<256*256>> bestPair(const NFA& graph) {
   return {i-b.begin(), *i};
 }
 
-std::vector<std::vector<NFA::VertexDescriptor>> pivotStates(NFA::VertexDescriptor source, const NFA& graph) {
-  std::vector<std::vector<NFA::VertexDescriptor>> ret(256);
+void pivotStates(NFA::VertexDescriptor source, const NFA& graph, std::vector<std::vector<NFA::VertexDescriptor>>& transitions) {
+  transitions.clear();
+  transitions.resize(256);
   ByteSet permitted;
 
   for (const NFA::VertexDescriptor ov : graph.outVertices(source)) {
     graph[ov].Trans->getBytes(permitted);
     for (uint32_t i = 0; i < 256; ++i) {
-      if (permitted[i] && std::find(ret[i].begin(), ret[i].end(), ov) == ret[i].end()) {
-        ret[i].push_back(ov);
+      if (permitted[i] && std::find(transitions[i].begin(), transitions[i].end(), ov) == transitions[i].end()) {
+        transitions[i].push_back(ov);
       }
     }
   }
-  return ret;
 }
 
 uint32_t maxOutbound(const std::vector<std::vector<NFA::VertexDescriptor>>& tranTable) {

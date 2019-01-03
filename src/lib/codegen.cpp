@@ -27,8 +27,9 @@ void CodeGenVisitor::discover_vertex(NFA::VertexDescriptor v, const NFA& graph) 
 
 uint32_t CodeGenVisitor::calcJumpTableSize(NFA::VertexDescriptor v, const NFA& graph, uint32_t outDegree) {
   if (outDegree > 3) {
-    TransitionTbl tbl(pivotStates(v, graph));
-    if (maxOutbound(tbl) < outDegree) {
+    pivotStates(v, graph, Helper.VisitorTransitions);
+    if (maxOutbound(Helper.VisitorTransitions) < outDegree) {
+      TransitionTbl& tbl(Helper.VisitorTransitions);
       uint32_t sizeIndirectTables = 0,
              num,
              first = 256,
