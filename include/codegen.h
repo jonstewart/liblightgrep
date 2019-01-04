@@ -56,7 +56,6 @@ typedef std::vector<std::vector<NFA::VertexDescriptor>> TransitionTbl;
 
 struct CodeGenHelper {
   CodeGenHelper(uint32_t numStates):
-    VisitorTransitions(256),
     DiscoverRanks(numStates, NONE),
     Snippets(numStates), Guard(0),
     NumDiscovered(0), MaxLabel(0), MaxCheck(0) {}
@@ -82,7 +81,6 @@ struct CodeGenHelper {
     Guard += info.numTotal();
   }
 
-  TransitionTbl VisitorTransitions;
   std::vector<uint32_t> DiscoverRanks;
   std::vector<StateLayoutInfo> Snippets;
   uint32_t Guard,
@@ -93,7 +91,7 @@ struct CodeGenHelper {
 
 class CodeGenVisitor {
 public:
-  CodeGenVisitor(CodeGenHelper& helper): Helper(helper) {}
+  CodeGenVisitor(CodeGenHelper& helper): VisitorTransitions(256), Helper(helper) {}
 
   void discover_vertex(NFA::VertexDescriptor v, const NFA& graph);
 
@@ -102,6 +100,7 @@ public:
   void finish_vertex(NFA::VertexDescriptor v, const NFA& graph);
 
 private:
+  TransitionTbl VisitorTransitions;
   CodeGenHelper& Helper;
 };
 
