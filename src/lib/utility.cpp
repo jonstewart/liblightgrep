@@ -21,13 +21,13 @@
 #include <algorithm>
 #include <set>
 
-std::pair<uint32_t,std::bitset<256*256>> bestPair(const NFA& graph) {
+std::pair<uint32_t, std::bitset<256 * 256>> bestPair(const NFA& graph) {
   std::set<std::pair<uint32_t,NFA::VertexDescriptor>> next;
   next.emplace(0, 0);
 
-  std::vector<std::bitset<256*256>> b;
+  std::vector<std::bitset<256 * 256>> b;
 
-  uint32_t lmin = std::numeric_limits<uint32_t>::max()-1;
+  uint32_t lmin = std::numeric_limits<uint32_t>::max() - 1;
 
   uint32_t depth;
   NFA::VertexDescriptor h;
@@ -49,13 +49,13 @@ std::pair<uint32_t,std::bitset<256*256>> bestPair(const NFA& graph) {
     // put successors in the queue if they're at lmin + 1 or less
     if (depth < lmin + 1) {
       for (const NFA::VertexDescriptor t : graph.outVertices(h)) {
-        next.emplace(depth+1, t);
+        next.emplace(depth + 1, t);
       }
     }
 
     // ensure that b[depth] exists
     if (b.size() <= depth) {
-      b.resize(depth+1);
+      b.resize(depth + 1);
     }
   
     // we use this pointer for getting sub-bitsets 
@@ -100,7 +100,7 @@ std::pair<uint32_t,std::bitset<256*256>> bestPair(const NFA& graph) {
 
   // Return the offset and bitset for the best two-byte window
   const auto i = std::min_element(b.begin(), b.end(),
-    [](const std::bitset<256*256>& l, const std::bitset<256*256>& r) {
+    [](const std::bitset<256 * 256>& l, const std::bitset<256 * 256>& r) {
       return l.count() < r.count();
     }
   );
