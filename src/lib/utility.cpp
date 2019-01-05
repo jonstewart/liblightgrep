@@ -22,6 +22,7 @@
 #include <set>
 
 std::pair<uint32_t, std::bitset<256 * 256>> bestPair(const NFA& graph) {
+  // There's gotta' be a better data structure to use than std::set -- JLS
   std::set<std::pair<uint32_t, NFA::VertexDescriptor>> next;
   next.emplace(0, 0);
 
