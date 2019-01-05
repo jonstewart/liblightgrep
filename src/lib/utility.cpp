@@ -22,7 +22,7 @@
 #include <set>
 
 std::pair<uint32_t, std::bitset<256 * 256>> bestPair(const NFA& graph) {
-  std::set<std::pair<uint32_t,NFA::VertexDescriptor>> next;
+  std::set<std::pair<uint32_t, NFA::VertexDescriptor>> next;
   next.emplace(0, 0);
 
   std::vector<std::bitset<256 * 256>> b;
