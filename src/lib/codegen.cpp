@@ -36,18 +36,18 @@ uint32_t CodeGenVisitor::calcJumpTableSize(NFA::VertexDescriptor v, const NFA& g
 
       for (uint32_t i = 0; i < 256; ++i) {
         num = VisitorTransitions[i].size();
-        if (num > 1) {
-          sizeIndirectTables += num;
-        }
         if (num) {
           first = std::min(first, i);
           last  = i;
+          if (num > 1) {
+            sizeIndirectTables += num;
+          }
         }
       }
 
       Helper.Snippets[v].Op = JUMP_TABLE_RANGE_OP;
-      // JumpTableRange instr + inclusive number
-      return 2 + (last - first) + 2*sizeIndirectTables;
+      // JumpTableRange instr + inclusive number + sum secondary table for nondeterministic transitions
+      return 2 + (last - first) + 2 * sizeIndirectTables;
     }
   }
   return 0;
@@ -55,18 +55,15 @@ uint32_t CodeGenVisitor::calcJumpTableSize(NFA::VertexDescriptor v, const NFA& g
 
 void CodeGenVisitor::finish_vertex(NFA::VertexDescriptor v, const NFA& graph) {
   // std::cerr << "on state " << v << " with discover rank " << Helper.DiscoverRanks[v] << std::endl;
+  auto& vertex(graph[v]);
 
-  uint32_t label = 0,
-         match = 0,
-         eval  = (v == 0 ? 0 : graph[v].Trans->numInstructions());
+  uint32_t label = vertex.Label == NONE ? 0: 1,
+           match = 0,
+           eval  = (v == 0 ? 0 : vertex.Trans->numInstructions());
 
   const uint32_t outDegree = graph.outDegree(v);
 
-  if (graph[v].Label != NONE) {
-    label = 1;
-  }
-
-  if (graph[v].IsMatch) {
+  if (vertex.IsMatch) {
     // 1 for match, 1 for finish; or 1 for match, 2 for jump if
     // match is nonterminal
     match = 2 + (outDegree > 0);
@@ -79,7 +76,7 @@ void CodeGenVisitor::finish_vertex(NFA::VertexDescriptor v, const NFA& graph) {
 
     if (outDegree < 4 || outOps == 0) {
       // count each of the non-initial children
-      outOps += 2*(outDegree-1);
+      outOps += 2 * (outDegree - 1);
 
       // count the first child only if it needs a jump
       if (Helper.DiscoverRanks[v] + 1 !=

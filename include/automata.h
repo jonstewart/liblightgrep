@@ -25,22 +25,22 @@
 #include "vectorfamily.h"
 
 struct Properties {
-  Properties(): Deterministic(true), TransFac(new TransitionFactory()) {}
+  Properties(): TransFac(new TransitionFactory()), Deterministic(true) {}
 
-  bool Deterministic;
   std::shared_ptr<TransitionFactory> TransFac;
+  bool Deterministic;
 };
 
 struct Glushkov {
   static const uint32_t NOLABEL;
 
-  Glushkov(): Trans(0), IsMatch(false), Label(NOLABEL) {}
+  Glushkov(): Trans(0), Label(NOLABEL), IsMatch(false) {}
 
   std::string label() const;
 
   Transition* Trans;
-  bool IsMatch;
   uint32_t Label;
+  bool IsMatch;
 };
 
 struct Empty {};
