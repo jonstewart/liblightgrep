@@ -55,6 +55,7 @@ src_lib_liblightgrepint_la_SOURCES = \
 	src/lib/rewriter.cpp \
 	src/lib/states.cpp \
 	src/lib/thread.cpp \
+	src/lib/transition_analysis.cpp \
 	src/lib/unparser.cpp \
 	src/lib/utf8.cpp \
 	src/lib/utfbase.cpp \
@@ -169,6 +170,7 @@ test_test_SOURCES = \
 	test/test_states.cpp \
 	test/test_testregex_basic_modified.cpp \
 	test/test_thread.cpp \
+	test/test_transition_analysis.cpp \
 	test/test_transitionfactory.cpp \
 	test/test_unicode.cpp \
 	test/test_unparser.cpp \

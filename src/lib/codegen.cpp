@@ -27,15 +27,15 @@ void CodeGenVisitor::discover_vertex(NFA::VertexDescriptor v, const NFA& graph) 
 
 uint32_t CodeGenVisitor::calcJumpTableSize(NFA::VertexDescriptor v, const NFA& graph, uint32_t outDegree) {
   if (outDegree > 3) {
-    pivotStates(v, graph, VisitorTransitions);
-    if (maxOutbound(VisitorTransitions) < outDegree) {
+    Analyzer.pivotStates(v, graph);
+    if (Analyzer.maxOutbound() < outDegree) {
       uint32_t sizeIndirectTables = 0,
              num,
              first = 256,
              last  = 0;
 
       for (uint32_t i = 0; i < 256; ++i) {
-        num = VisitorTransitions[i].size();
+        num = Analyzer.Transitions[i].size();
         if (num) {
           first = std::min(first, i);
           last  = i;

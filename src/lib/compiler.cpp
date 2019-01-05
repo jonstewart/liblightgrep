@@ -20,6 +20,7 @@
 
 #include "codegen.h"
 #include "program.h"
+#include "transition_analysis.h"
 #include "utility.h"
 
 #include <tuple>
@@ -62,21 +63,21 @@ void createJumpTable(const CodeGenHelper& cg, Instruction const* const base, Ins
   Instruction* cur = start,
              * indirectTbl;
 
-  TransitionTbl tbl;
-  pivotStates(v, graph, tbl);
+  TransitionAnalyzer analyzer;
+  analyzer.pivotStates(v, graph);
 
   uint32_t first, last;
-  std::tie(first, last) = minAndMaxValues(tbl);
+  std::tie(first, last) = minAndMaxValues(analyzer.Transitions);
 
   *cur++ = Instruction::makeJumpTableRange(first, last);
   indirectTbl = start + 2 + (last - first);
 
   for (uint32_t i = first; i <= last; ++i) {
-    if (tbl[i].empty()) {
+    if (analyzer.Transitions[i].empty()) {
       *cur++ = Instruction::makeRaw32(0);
     }
-    else if (tbl[i].size() == 1) {
-      const uint32_t addr = figureOutLanding(cg, *tbl[i].begin(), graph);
+    else if (analyzer.Transitions[i].size() == 1) {
+      const uint32_t addr = figureOutLanding(cg, *analyzer.Transitions[i].begin(), graph);
       *cur++ = Instruction::makeRaw32(addr);
     }
     else {
@@ -85,8 +86,8 @@ void createJumpTable(const CodeGenHelper& cg, Instruction const* const base, Ins
 
       // write the indirect table in reverse edge order because
       // parent threads have priority over forked children
-      for (int32_t j = tbl[i].size() - 1; j >= 0; --j) {
-        const uint32_t landing = figureOutLanding(cg, tbl[i][j], graph);
+      for (int32_t j = analyzer.Transitions[i].size() - 1; j >= 0; --j) {
+        const uint32_t landing = figureOutLanding(cg, analyzer.Transitions[i][j], graph);
 
         *indirectTbl = j > 0 ?
           Instruction::makeFork(indirectTbl, landing) :
