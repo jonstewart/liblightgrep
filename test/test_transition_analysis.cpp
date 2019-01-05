@@ -39,18 +39,19 @@ SCOPE_TEST(testPivotTransitions) {
   analyzer.pivotStates(0, fsm);
   SCOPE_ASSERT_EQUAL(256u, analyzer.Transitions.size());
   for (uint32_t i = 0; i < 256; ++i) {
+  	auto& tbl(analyzer.Transitions[i]);
     if (i == 'a') {
-      SCOPE_ASSERT_EQUAL(2u, analyzer.Transitions[i].size());
-      SCOPE_ASSERT(std::find(analyzer.Transitions[i].begin(), analyzer.Transitions[i].end(), 1) != analyzer.Transitions[i].end());
-      SCOPE_ASSERT(std::find(analyzer.Transitions[i].begin(), analyzer.Transitions[i].end(), 2) != analyzer.Transitions[i].end());
+      SCOPE_ASSERT_EQUAL(2u, tbl.size());
+      SCOPE_ASSERT(std::find(tbl.begin(), tbl.end(), 1) != tbl.end());
+      SCOPE_ASSERT(std::find(tbl.begin(), tbl.end(), 2) != tbl.end());
     }
     else if (i == 'z') {
-      SCOPE_ASSERT_EQUAL(2u, analyzer.Transitions[i].size());
-      SCOPE_ASSERT(std::find(analyzer.Transitions[i].begin(), analyzer.Transitions[i].end(), 3) != analyzer.Transitions[i].end());
-      SCOPE_ASSERT(std::find(analyzer.Transitions[i].begin(), analyzer.Transitions[i].end(), 4) != analyzer.Transitions[i].end());
+      SCOPE_ASSERT_EQUAL(2u, tbl.size());
+      SCOPE_ASSERT(std::find(tbl.begin(), tbl.end(), 3) != tbl.end());
+      SCOPE_ASSERT(std::find(tbl.begin(), tbl.end(), 4) != tbl.end());
     }
     else {
-      SCOPE_ASSERT(analyzer.Transitions[i].empty());
+      SCOPE_ASSERT(tbl.empty());
     }
   }
 }
