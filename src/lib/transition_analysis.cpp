@@ -9,8 +9,9 @@ TransitionAnalyzer::TransitionAnalyzer():
 void TransitionAnalyzer::pivotStates(NFA::VertexDescriptor source, const NFA& graph) {
   Transitions.clear();
   Transitions.resize(256);
-  First = 256u;
-  Last  = 0u;
+  First = 256;
+  Last  = 0;
+  MaxOutbound = 0;
   ByteSet permitted;
 
   for (const NFA::VertexDescriptor ov : graph.outVertices(source)) {
@@ -19,19 +20,12 @@ void TransitionAnalyzer::pivotStates(NFA::VertexDescriptor source, const NFA& gr
       if (permitted[i]) {
         First = std::min(First, i);
         Last = std::max(Last, i);
-        if (std::find(Transitions[i].begin(), Transitions[i].end(), ov) == Transitions[i].end()) {
-          Transitions[i].push_back(ov);
+        auto& tbl(Transitions[i]);
+        if (std::find(tbl.begin(), tbl.end(), ov) == tbl.end()) {
+          tbl.push_back(ov);
+          MaxOutbound = std::max(MaxOutbound, tbl.size());
         }
       }
     }
   }
-}
-
-uint32_t TransitionAnalyzer::maxOutbound(void) const {
-  return std::max_element(Transitions.begin(), Transitions.end(),
-    [](const std::vector<NFA::VertexDescriptor>& l,
-       const std::vector<NFA::VertexDescriptor>& r) {
-      return l.size() < r.size();
-    }
-  )->size();
 }
