@@ -38,25 +38,6 @@ uint32_t figureOutLanding(const CodeGenHelper& cg, NFA::VertexDescriptor v, cons
   }
 }
 
-std::tuple<uint32_t, uint32_t> minAndMaxValues(const std::vector<std::vector<NFA::VertexDescriptor>>& tbl) {
-  uint32_t first = 0,
-           last  = 255;
-
-  for (uint32_t i = 0; i < 256; ++i) {
-    if (!tbl[i].empty()) {
-      first = i;
-      break;
-    }
-  }
-  for (uint32_t i = 255; i > first; --i) {
-    if (!tbl[i].empty()) {
-      last = i;
-      break;
-    }
-  }
-  return std::make_tuple(first, last);
-}
-
 // JumpTables are either ranged, or full-size, and can have indirect tables at the end when there are multiple transitions out on a single byte value
 void createJumpTable(const CodeGenHelper& cg, Instruction const* const base, Instruction* const start, NFA::VertexDescriptor v, const NFA& graph) {
   const uint32_t startIndex = start - base;
@@ -66,9 +47,8 @@ void createJumpTable(const CodeGenHelper& cg, Instruction const* const base, Ins
   TransitionAnalyzer analyzer;
   analyzer.pivotStates(v, graph);
 
-  uint32_t first, last;
-  std::tie(first, last) = minAndMaxValues(analyzer.Transitions);
-
+  const uint32_t first = analyzer.first(),
+                 last = analyzer.last();
   *cur++ = Instruction::makeJumpTableRange(first, last);
   indirectTbl = start + 2 + (last - first);
 

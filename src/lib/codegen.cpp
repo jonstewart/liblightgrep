@@ -31,17 +31,13 @@ uint32_t CodeGenVisitor::calcJumpTableSize(NFA::VertexDescriptor v, const NFA& g
     if (Analyzer.maxOutbound() < outDegree) {
       uint32_t sizeIndirectTables = 0,
              num,
-             first = 256,
-             last  = 0;
+             first = Analyzer.first(),
+             last  = Analyzer.last();
 
-      for (uint32_t i = 0; i < 256; ++i) {
+      for (uint32_t i = first; i <= last; ++i) {
         num = Analyzer.Transitions[i].size();
-        if (num) {
-          first = std::min(first, i);
-          last  = i;
-          if (num > 1) {
-            sizeIndirectTables += num;
-          }
+        if (num > 1) {
+          sizeIndirectTables += num;
         }
       }
 
