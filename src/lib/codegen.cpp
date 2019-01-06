@@ -29,6 +29,9 @@ uint32_t CodeGenVisitor::calcJumpTableSize(NFA::VertexDescriptor v, const NFA& g
   if (outDegree > 3) {
     Analyzer.pivotStates(v, graph);
     if (Analyzer.maxOutbound() < outDegree) {
+      // it's a jumptablerange! now to figure out the size...
+      Helper.Snippets[v].Op = JUMP_TABLE_RANGE_OP;
+
       uint32_t sizeIndirectTables = 0,
              num,
              first = Analyzer.first(),
@@ -40,8 +43,6 @@ uint32_t CodeGenVisitor::calcJumpTableSize(NFA::VertexDescriptor v, const NFA& g
           sizeIndirectTables += num;
         }
       }
-
-      Helper.Snippets[v].Op = JUMP_TABLE_RANGE_OP;
       // JumpTableRange instr + inclusive number + sum secondary table for nondeterministic transitions
       return 2 + (last - first) + 2 * sizeIndirectTables;
     }
