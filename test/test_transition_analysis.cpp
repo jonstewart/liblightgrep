@@ -69,10 +69,10 @@ SCOPE_TEST(testMaxOutbound) {
 
 SCOPE_TEST(testMinAndMax) {
   NFA fsm(5);
-  edge(0, 1, fsm, fsm.TransFac->getByte('a'));
+  edge(0, 1, fsm, fsm.TransFac->getByte('c'));
   edge(0, 2, fsm, fsm.TransFac->getByte('a'));
   edge(0, 3, fsm, fsm.TransFac->getByte('b'));
-  edge(0, 4, fsm, fsm.TransFac->getByte('c'));
+  edge(0, 4, fsm, fsm.TransFac->getByte('a'));
   TransitionAnalyzer analyzer;
   analyzer.pivotStates(0, fsm);
   SCOPE_ASSERT_EQUAL(uint32_t('a'), analyzer.first());

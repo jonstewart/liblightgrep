@@ -17,8 +17,8 @@ void TransitionAnalyzer::pivotStates(NFA::VertexDescriptor source, const NFA& gr
     graph[ov].Trans->getBytes(permitted);
     for (uint32_t i = 0; i < 256; ++i) {
       if (permitted[i]) {
-        First = 256 == First ? i: First;
-        Last = i;
+        First = std::min(First, i);
+        Last = std::max(Last, i);
         if (std::find(Transitions[i].begin(), Transitions[i].end(), ov) == Transitions[i].end()) {
           Transitions[i].push_back(ov);
         }
