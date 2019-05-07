@@ -18,9 +18,11 @@ public:
 
 	uint32_t numRanges(void) const { return NumRanges; }
 
-	TransitionTbl Transitions;
+	const TransitionTbl& transitions() const { return Transitions; }
 
 private:
+	TransitionTbl Transitions;
+
 	size_t	 MaxOutbound;
 	uint32_t First,
 			 Last,

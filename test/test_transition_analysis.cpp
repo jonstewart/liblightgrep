@@ -37,9 +37,9 @@ SCOPE_TEST(testPivotTransitions) {
 
   TransitionAnalyzer analyzer;
   analyzer.pivotStates(0, fsm);
-  SCOPE_ASSERT_EQUAL(256u, analyzer.Transitions.size());
+  SCOPE_ASSERT_EQUAL(256u, analyzer.transitions().size());
   for (uint32_t i = 0; i < 256; ++i) {
-  	auto& tbl(analyzer.Transitions[i]);
+  	auto& tbl(analyzer.transitions()[i]);
     if (i == 'a') {
       SCOPE_ASSERT_EQUAL(2u, tbl.size());
       SCOPE_ASSERT(std::find(tbl.begin(), tbl.end(), 1) != tbl.end());
@@ -98,7 +98,7 @@ SCOPE_TEST(testNullPivot) {
   SCOPE_ASSERT_EQUAL(256u, analyzer.first());
   SCOPE_ASSERT_EQUAL(0u, analyzer.last());
   SCOPE_ASSERT_EQUAL(0u, analyzer.numRanges());
-  for (auto& tbl: analyzer.Transitions) {
+  for (auto& tbl: analyzer.transitions()) {
     SCOPE_ASSERT_EQUAL(0u, tbl.size());
   }
 }

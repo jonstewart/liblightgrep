@@ -38,7 +38,7 @@ uint32_t CodeGenVisitor::calcJumpTableSize(NFA::VertexDescriptor v, const NFA& g
              last  = Analyzer.last();
 
       for (uint32_t i = first; i <= last; ++i) {
-        num = Analyzer.Transitions[i].size();
+        num = Analyzer.transitions()[i].size();
         if (num > 1) {
           sizeIndirectTables += num;
         }

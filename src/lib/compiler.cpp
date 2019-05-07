@@ -53,11 +53,11 @@ void createJumpTable(const CodeGenHelper& cg, Instruction const* const base, Ins
   indirectTbl = start + 2 + (last - first);
 
   for (uint32_t i = first; i <= last; ++i) {
-    if (analyzer.Transitions[i].empty()) {
+    if (analyzer.transitions()[i].empty()) {
       *cur++ = Instruction::makeRaw32(0);
     }
-    else if (analyzer.Transitions[i].size() == 1) {
-      const uint32_t addr = figureOutLanding(cg, *analyzer.Transitions[i].begin(), graph);
+    else if (analyzer.transitions()[i].size() == 1) {
+      const uint32_t addr = figureOutLanding(cg, *analyzer.transitions()[i].begin(), graph);
       *cur++ = Instruction::makeRaw32(addr);
     }
     else {
@@ -66,8 +66,8 @@ void createJumpTable(const CodeGenHelper& cg, Instruction const* const base, Ins
 
       // write the indirect table in reverse edge order because
       // parent threads have priority over forked children
-      for (int32_t j = analyzer.Transitions[i].size() - 1; j >= 0; --j) {
-        const uint32_t landing = figureOutLanding(cg, analyzer.Transitions[i][j], graph);
+      for (int32_t j = analyzer.transitions()[i].size() - 1; j >= 0; --j) {
+        const uint32_t landing = figureOutLanding(cg, analyzer.transitions()[i][j], graph);
 
         *indirectTbl = j > 0 ?
           Instruction::makeFork(indirectTbl, landing) :
