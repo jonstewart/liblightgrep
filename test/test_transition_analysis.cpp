@@ -78,3 +78,27 @@ SCOPE_TEST(testMinAndMax) {
   SCOPE_ASSERT_EQUAL(uint32_t('a'), analyzer.first());
   SCOPE_ASSERT_EQUAL(uint32_t('c'), analyzer.last());
 }
+
+SCOPE_TEST(testNumRanges) {
+  NFA fsm(4);
+  edge(0, 1, fsm, fsm.TransFac->getRange('a', 'e'));
+  edge(0, 2, fsm, fsm.TransFac->getRange('d', 'h'));
+  edge(0, 3, fsm, fsm.TransFac->getRange('k', 'q'));
+  TransitionAnalyzer analyzer;
+  analyzer.pivotStates(0, fsm);
+  SCOPE_ASSERT_EQUAL(uint32_t('a'), analyzer.first());
+  SCOPE_ASSERT_EQUAL(uint32_t('q'), analyzer.last());
+  SCOPE_ASSERT_EQUAL(4u, analyzer.numRanges());
+}
+
+SCOPE_TEST(testNullPivot) {
+  NFA fsm(1);
+  TransitionAnalyzer analyzer;
+  analyzer.pivotStates(0, fsm);
+  SCOPE_ASSERT_EQUAL(256u, analyzer.first());
+  SCOPE_ASSERT_EQUAL(0u, analyzer.last());
+  SCOPE_ASSERT_EQUAL(0u, analyzer.numRanges());
+  for (auto& tbl: analyzer.Transitions) {
+    SCOPE_ASSERT_EQUAL(0u, tbl.size());
+  }
+}

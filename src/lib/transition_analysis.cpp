@@ -3,7 +3,8 @@
 TransitionAnalyzer::TransitionAnalyzer():
     Transitions(256),
     First(0),
-    Last(0)
+    Last(0),
+    NumRanges(0)
 {}
 
 void TransitionAnalyzer::pivotStates(NFA::VertexDescriptor source, const NFA& graph) {
@@ -25,7 +26,14 @@ void TransitionAnalyzer::pivotStates(NFA::VertexDescriptor source, const NFA& gr
           tbl.push_back(ov);
           MaxOutbound = std::max(MaxOutbound, tbl.size());
         }
+        if (i > First && tbl != Transitions[i - 1]) {
+          ++NumRanges;
+        }
       }
     }
+  }
+  if (First <= Last) {
+    // loop above doesn't count the _first_ range
+    ++NumRanges;
   }
 }

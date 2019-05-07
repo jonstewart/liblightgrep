@@ -16,10 +16,13 @@ public:
 	uint32_t first(void) const { return First; }
 	uint32_t last(void) const { return Last; }
 
+	uint32_t numRanges(void) const { return NumRanges; }
+
 	TransitionTbl Transitions;
 
 private:
 	size_t	 MaxOutbound;
 	uint32_t First,
-			 Last;
+			 Last,
+			 NumRanges;
 };
